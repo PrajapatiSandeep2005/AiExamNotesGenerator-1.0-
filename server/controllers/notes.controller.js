@@ -28,6 +28,7 @@ export const getSingleNotes = async (req, res) => {
             revisionMode: notes.revisionMode,
             includeDiagrams: notes.includeDiagrams,
             includeChart: notes.includeChart,
+            providerUsed: notes.providerUsed,
             createdAt: notes.createdAt
         });
     } catch (error) {

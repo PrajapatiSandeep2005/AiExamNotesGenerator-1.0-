@@ -6,6 +6,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { Provider } from 'react-redux';
 import store from './redux/store';
 
+document.documentElement.dataset.theme = localStorage.getItem('examnotes-theme') === 'dark' ? 'dark' : 'light';
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

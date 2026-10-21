@@ -21,6 +21,7 @@ const notesSchema = new mongoose.Schema({
 
     includeDiagrams: Boolean,
     includeChart: Boolean,
+    providerUsed: String,
 
     content: {
         type: mongoose.Schema.Types.Mixed,

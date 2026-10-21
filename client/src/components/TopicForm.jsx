@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion';
 import { generateNotes } from '../services/api';
 import { useDispatch } from 'react-redux';
-import { updateCredits } from '../redux/userSlice';
+import { updateCredits, updateDailyAiUsage } from '../redux/userSlice';
 
-function TopicForm({ setResults, setLoading, loading, setError }) {
+function TopicForm({ setResults, setLoading, loading, setError, selectedAiModel = "auto" }) {
     const [topic, setTopic] = useState("");
     const [classLevel, setClassLevel] = useState("");
     const [examType, setExamType] = useState("");
@@ -22,6 +22,8 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
         }
 
         setError("")
+        setProgress(0);
+        setProgressText("");
         setLoading(true);
         setResults(null);
 
@@ -32,8 +34,12 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
                 examType,
                 revisionMode,
                 includeDiagrams,
-                includeChart
+                includeChart,
+                aiModel: selectedAiModel,
             });
+            if (!result?.data) {
+                throw new Error(result?.message || "The AI provider did not return notes.");
+            }
             setResults(result.data);
             setLoading(false);
             setClassLevel("");
@@ -46,16 +52,35 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
             if(typeof result.remainingCredits === "number"){
                 dispatch(updateCredits(result.remainingCredits));
             }
+            dispatch(updateDailyAiUsage({
+                dailyAiChatDate: result.dailyAiChatDate,
+                dailyAiChatLimit: result.dailyAiChatLimit,
+                dailyAiChatsUsed: result.dailyAiChatsUsed,
+                dailyAiChatsRemaining: result.dailyAiChatsRemaining,
+                dailyAiChatsByProvider: result.dailyAiChatsByProvider,
+            }));
         } catch (error) {
-            setError("Failed to fetch notes. Please try again.");
+            console.error("Error generating notes:", error);
+            const responseData = error.response?.data;
+            if (typeof responseData?.remainingCredits === "number") {
+                dispatch(updateCredits(responseData.remainingCredits));
+            }
+            if (typeof responseData?.dailyAiChatsRemaining === "number") {
+                dispatch(updateDailyAiUsage({
+                    dailyAiChatDate: responseData.dailyAiChatDate,
+                    dailyAiChatLimit: responseData.dailyAiChatLimit,
+                    dailyAiChatsUsed: responseData.dailyAiChatsUsed,
+                    dailyAiChatsRemaining: responseData.dailyAiChatsRemaining,
+                    dailyAiChatsByProvider: responseData.dailyAiChatsByProvider,
+                }));
+            }
+            setError(responseData?.message || error.message || "Failed to fetch notes. Please try again.");
             setLoading(false);
         }
     };
 
     useEffect(() => {
         if (!loading) {
-            setProgress(0);
-            setProgressText("");
             return;
         }
 
@@ -85,14 +110,14 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
     return (
         <motion.div initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className='rounded-2xl bg-gradient-to-br from-black/80 to-black/90 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_rgba(0,0,0,0.75)] p-8 space-y-6 text-white'>
-            <input className='w-full p-3 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent' placeholder='Enter your topic or question...' onChange={(e) => setTopic(e.target.value)}
+            className='rounded-xl bg-[#111213] backdrop-blur-2xl border border-[#d49a54]/30 shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 sm:p-7 space-y-3 text-white'>
+            <input className='w-full p-3 rounded-lg bg-[#171513] border border-[#8b6337]/45 placeholder-[#a08a72] text-white focus:outline-none focus:ring-2 focus:ring-[#f5a13b]/50 focus:border-[#f5a13b]/70' placeholder='Enter your topic or question...' onChange={(e) => setTopic(e.target.value)}
                 value={topic} />
 
-            <input className='w-full p-3 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent' placeholder='Enter your class level... (eg : 10th, 12th)' onChange={(e) => setClassLevel(e.target.value)}
+            <input className='w-full p-3 rounded-lg bg-[#171513] border border-[#8b6337]/45 placeholder-[#a08a72] text-white focus:outline-none focus:ring-2 focus:ring-[#f5a13b]/50 focus:border-[#f5a13b]/70' placeholder='Enter your class level... (eg : 10th, 12th)' onChange={(e) => setClassLevel(e.target.value)}
                 value={classLevel} />
 
-            <input className='w-full p-3 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent' placeholder='Enter your exam type... (eg : CBSE , JEE)' onChange={(e) => setExamType(e.target.value)}
+            <input className='w-full p-3 rounded-lg bg-[#171513] border border-[#8b6337]/45 placeholder-[#a08a72] text-white focus:outline-none focus:ring-2 focus:ring-[#f5a13b]/50 focus:border-[#f5a13b]/70' placeholder='Enter your exam type... (eg : CBSE , JEE)' onChange={(e) => setExamType(e.target.value)}
                 value={examType} />
 
             <div className='flex flex-col gap-4 md:flex-row '>
@@ -104,8 +129,8 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
             <motion.button onClick={handleSubmit}
                 whileHover={!loading ? { scale: 1.02 } : {}} whileTap={!loading ? { scale: 0.95 } : {}} disabled={loading}
                 className={`w-full mt-4 py-3 rounded-xl font-semibold  cursor-pointer flex item-center justify-center gap-3 transition  ${loading
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-gradient-to-br from-white to-gray-200 text-black shadow-[0_15px_335px_rgba(0,0,0,0.5)]"}`}>
+                    ? "bg-[#6d6254] text-[#ddd4ca] cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#f8aa46] to-[#ed8e28] text-[#1c130a] shadow-[0_8px_25px_rgba(245,161,59,0.16)] hover:brightness-110"}`}>
                 {loading ? "Generating Notes..." : "Generate Notes"}
 
             </motion.button>
@@ -117,7 +142,7 @@ function TopicForm({ setResults, setLoading, loading, setError }) {
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
                             transition={{ duration: 0.6, ease: "easeOut" }}
-                            className='w-full h-2 bg-gradient-to-r from-green-500 via-green-400 to-green-500'>
+                            className='w-full h-2 bg-gradient-to-r from-[#d68125] via-[#ffc06b] to-[#d68125]'>
                                 
                         </motion.div>
                     </div>
@@ -143,8 +168,8 @@ function Toggle({ label, checked, onChange }) {
             <motion.div
                 animate={{
                     backgroundColor: checked
-                        ? "rgba(34 , 197 , 94 , 0.35)"
-                        : "rgba(255 , 255 , 255 , 0.1)"
+                        ? "rgba(245, 161, 59, 0.4)"
+                        : "rgba(255, 255, 255, 0.1)"
                 }}
                 transition={{ duration: 0.25 }}
                 className='relative w-12 h-6 rounded-full border border-white/20 backdrop-blur-lg'>
@@ -155,7 +180,7 @@ function Toggle({ label, checked, onChange }) {
                 </motion.div>
             </motion.div>
 
-            <span className={`text-sm transition-colors ${checked ? 'text-green-300' : 'text-gray-400'}`}>{label}</span>
+            <span className={`text-sm transition-colors ${checked ? 'text-[#ffc06b]' : 'text-gray-400'}`}>{label}</span>
 
         </div>
     )

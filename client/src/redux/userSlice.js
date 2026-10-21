@@ -13,9 +13,14 @@ const userSlice = createSlice({
             if (state.userData) {
                 state.userData.credits = action.payload;
             }
+        },
+        updateDailyAiUsage: (state, action) => {
+            if (state.userData) {
+                Object.assign(state.userData, action.payload);
+            }
         }
     },
 });
 
-export const { setUserData , updateCredits} = userSlice.actions;
+export const { setUserData, updateCredits, updateDailyAiUsage } = userSlice.actions;
 export default userSlice.reducer;

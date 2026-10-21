@@ -1,25 +1,28 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { serverURL } from '../App';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { GiHamburgerMenu } from 'react-icons/gi';
 import FinalResult from '../components/FinalResult.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import { ArrowLeft } from 'lucide-react';
+import { getTotalAvailableAiChats } from '../utils/credits';
 
 function History() {
   const [topics, setTopics] = useState([])
   const navigate = useNavigate();
   const { userData } = useSelector((state) => state.user);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [activeNote, setActiveNote] = useState(null);
   const [selectedNote, setSelectedNote] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
-  const credits = userData.credits;
+  const availableAiChats = getTotalAvailableAiChats(userData);
 
   useEffect(() => {
     const myNotes = async () => {
@@ -62,10 +65,12 @@ function History() {
       );
 
       setSelectedNote({
-        ...res.data.content,
+        content: res.data.content,
+        topic: res.data.topic,
         revisionMode: res.data.revisionMode,
         includeDiagrams: res.data.includeDiagrams,
-        includeChart: res.data.includeChart
+        includeChart: res.data.includeChart,
+        providerUsed: res.data.providerUsed,
       });
 
       setLoading(false);
@@ -75,23 +80,17 @@ function History() {
     }
   };
 
-  useEffect(() => {
-    if (window.innerWidth >= 1024) {
-      setIsSidebarOpen(true);
-    }
-  }, [])
-
   return (
-    <div className='min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 px-6 py-8'>
+    <div className='min-h-screen bg-[#08090a] px-4 sm:px-6 py-5 sm:py-8'>
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className='mb-10 rounded-2xl bg-black/80 backdrop-blur-lg border border-white/10 px-8 py-6 items-center flex justify-between md:items-center gap-4 flex-col md:flex-row shadow-[0_20px_40px_rgba(0,0,0,0.6)]'
+        className='max-w-6xl mx-auto mb-6 rounded-xl bg-[#141516] backdrop-blur-lg border border-white/10 px-5 sm:px-8 py-4 items-center flex justify-between md:items-center gap-4 flex-col md:flex-row shadow-[0_20px_40px_rgba(0,0,0,0.45)]'
       >
         <div className='cursor-pointer' onClick={() => navigate('/')}>
-          <h1 className='text-2xl font-bold bg-linear-to-r from-white via-gray-300 to-white bg-clip-text text-transparent'>ExamNotesAI</h1>
-          <p className='text-sm text-white/80 mt-4'>AI-powered study notes and exam preparation resources</p>
+          <BrandLogo />
+          <p className='text-xs text-[#a09d98] mt-1'>AI-powered study notes and exam preparation resources</p>
         </div>
 
         <div className='flex items-center gap-4 flex-wrap'>
@@ -100,15 +99,15 @@ function History() {
           </button>}
 
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/30 text-white text-sm"
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#f5a13b]/10 border border-[#f5a13b]/25 text-[#ffc06b] text-sm"
             onClick={() => navigate('/pricing')}
           >
-            <span className='text-xl'>💎</span>
-            <span>{credits}</span>
+            <span className='text-xs'>◆</span>
+            <span>{availableAiChats} AI Chats</span>
             <motion.span
               whileHover={{ scale: 1.2 }}
               whileTap={{ scale: 0.97 }}
-              className='ml-2 h-5 w-5 rounded-full bg-white text-black text-xs flex items-center justify-center font-bold cursor-pointer'
+              className='ml-1 h-4 w-4 rounded-full bg-[#f5a13b] text-black text-xs flex items-center justify-center font-bold cursor-pointer'
             >
               ➕
             </motion.span>
@@ -116,11 +115,12 @@ function History() {
 
           <button
             onClick={openTransactions}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 border border-white/30 text-white text-sm hover:bg-white/30 transition-all"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white text-sm hover:bg-white/10 transition-all"
           >
             <span>💳</span>
             <span className="hidden sm:inline">Transactions</span>
           </button>
+          <ThemeToggle />
         </div>
       </motion.header>
 
@@ -132,11 +132,11 @@ function History() {
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className='lg:static relative top-0 left-0 z-50 lg:z-auto w-72 lg:w-auto h-full lg:h-[75vh] lg:col-span-1 bg-black/90 lg:bg-black/80 backdrop-blur-xl border border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-5 overflow-y-auto lg:rounded-3xl'
+              className='lg:static relative top-0 left-0 z-50 lg:z-auto w-72 lg:w-auto h-full lg:h-[75vh] lg:col-span-1 bg-[#141516] backdrop-blur-xl border border-[#d49a54]/25 shadow-[0_20px_40px_rgba(0,0,0,0.5)] p-5 overflow-y-auto lg:rounded-xl'
             >
               <button
                 onClick={() => setIsSidebarOpen(false)}
-                className="group absolute top-4 left-4 md:top-8 md:left-8 z-20 flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-gray-200 text-gray-700 font-medium shadow-sm transition-all duration-300 hover:bg-white hover:text-black hover:shadow-md hover:-translate-x-1"
+                className="group absolute top-4 left-4 md:top-8 md:left-8 z-20 flex items-center gap-2 px-3 py-2 rounded-lg bg-[#211b13] backdrop-blur-md border border-[#d49a54]/30 text-[#ffc06b] font-medium shadow-sm transition-all duration-300 hover:bg-[#302417] hover:shadow-md hover:-translate-x-1"
               >
                 <ArrowLeft
                   size={18}
@@ -148,14 +148,14 @@ function History() {
               <div className='mb-4 space-y-1 pt-16'>
                 <button
                   onClick={() => navigate('/notes')}
-                  className='w-full px-3 py-2 rounded-lg text-sm text-gray-300 bg-white/10 hover:bg-white/20 cursor-pointer'
+                  className='w-full px-3 py-2 rounded-lg text-sm text-[#ffc06b] bg-[#f5a13b]/10 hover:bg-[#f5a13b]/20 cursor-pointer'
                 >
                   ➕ New Notes
                 </button>
 
-                <hr className='border-white/30 mb-4' />
+                <hr className='border-white/10 mb-4' />
 
-                <h2 className='text-lg font-bold mb-4 bg-gradient-to-r from-white via-gray-300 to-white bg-clip-text text-transparent'>
+                <h2 className='text-lg font-bold mb-4 text-white'>
                   📋Your Notes
                 </h2>
 
@@ -172,17 +172,17 @@ function History() {
                       }}
                       className={`cursor-pointer p-3 rounded-xl transition-all
                       ${activeNote === t._id
-                          ? "bg-indigo-600/30 border-indigo-400 shadow-[0_0_0_2px_rgba(99,102,241,0.7)]"
-                          : "bg-white/10 border-white/20 hover:bg-white/20"}`}
+                          ? "bg-[#f5a13b]/15 border-[#f5a13b]/50 shadow-[0_0_0_1px_rgba(245,161,59,0.35)]"
+                          : "bg-white/5 border-white/10 hover:bg-white/10"}`}
                     >
                       <p className='text-sm font-semibold text-white'>
                         {t.topic}
                       </p>
 
                       <div className='mt-2 flex flex-wrap gap-2 text-xs'>
-                        {t.classLevel && <span className='px-2 py-0.5 rounded-full bg-indigo-600/30 text-indigo-300'>ClassLevel: {t.classLevel}</span>}
+                        {t.classLevel && <span className='px-2 py-0.5 rounded-full bg-[#f5a13b]/10 text-[#ffc06b]'>ClassLevel: {t.classLevel}</span>}
 
-                        {t.examType && <span className='px-2 py-0.5 rounded-full bg-purple-600/20 text-purple-300'>{t.examType}</span>}
+                        {t.examType && <span className='px-2 py-0.5 rounded-full bg-white/5 text-gray-300'>{t.examType}</span>}
                       </div>
 
                       <div className='mt-2 flex gap-3 text-xs text-gray-400'>
@@ -202,12 +202,36 @@ function History() {
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className='lg:col-span-3 p-6 rounded-2xl bg-white min-h-[75vh] shadow-[0_20px_40px_rgba(0,0,0,0.5)]'
+          className='lg:col-span-3 h-[75vh] min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 rounded-xl bg-[#111213] border border-[#d49a54]/25 shadow-[0_20px_40px_rgba(0,0,0,0.4)]'
         >
-          {loading && <p className='text-center text-gray-500'>Loading Notes...</p>}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-5"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-center gap-3 text-sm text-[#ffc06b]">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#f5a13b]/30 border-t-[#ffc06b]" />
+                Loading saved notes...
+              </div>
+              <div className="animate-pulse space-y-4">
+                <div className="h-8 w-2/5 rounded bg-[#f5a13b]/15" />
+                <div className="h-40 rounded-xl bg-white/5" />
+                <div className="space-y-3 rounded-xl border border-white/5 p-4">
+                  <div className="h-5 w-1/4 rounded bg-white/10" />
+                  <div className="h-4 w-full rounded bg-white/10" />
+                  <div className="h-4 w-11/12 rounded bg-white/10" />
+                  <div className="h-4 w-4/5 rounded bg-white/10" />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {!loading && !selectedNote && (
-            <div className='h-full flex items-center justify-center text-gray-400'>
+            <div className='h-full min-h-[45vh] flex flex-col gap-4 items-center justify-center text-center text-gray-400'>
+              <span className="text-4xl text-[#bd8545]">▤</span>
               Select a note from the left
             </div>
           )}
@@ -225,7 +249,7 @@ function History() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg max-h-[80vh] overflow-hidden rounded-3xl bg-black/95 border border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
+            className="w-full max-w-lg max-h-[80vh] overflow-hidden rounded-2xl bg-[#141516] border border-[#d49a54]/25 shadow-[0_20px_60px_rgba(0,0,0,0.7)]"
           >
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
               <div>
@@ -264,7 +288,7 @@ function History() {
                   {transactions.map((transaction) => (
                     <div
                       key={transaction._id}
-                      className="p-4 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition-all"
+                      className="p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div>

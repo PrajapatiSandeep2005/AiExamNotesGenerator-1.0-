@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,21 +6,25 @@ import axios from 'axios';
 import { serverURL } from '../App';
 import { setUserData } from '../redux/userSlice';
 import { useNavigate } from 'react-router-dom';
+import { getTotalAvailableAiChats } from '../utils/credits';
+import ThemeToggle from './ThemeToggle';
 
 function Navbar() {
     const { userData } = useSelector((state) => state.user);
-    const credits = userData ? userData.credits : 0;
+    const availableAiChats = getTotalAvailableAiChats(userData);
     const [showCredits, setShowCredits] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const handleLogout = async () => {
         try {
-            await axios.post(serverURL + "/api/auth/logout", { withCredentials: true });
-            dispatch(setUserData(null));
-            navigate("/auth");
+            await axios.post(serverURL + "/api/auth/logout", {}, { withCredentials: true });
         } catch (error) {
             console.error("Error logging out:", error);
+        } finally {
+            localStorage.removeItem("token");
+            dispatch(setUserData(null));
+            navigate("/auth");
         }
     };
     return (
@@ -28,32 +32,36 @@ function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.5 }}
-            className="relative z-20 mx-6 mt-6 rounded-2xl bg-gradient-to-br from-black/90 via-black/80 to-black/90 p-1 backdrop-blur-2xl border border-white/10 shadow-[0_22px_70px_4px_rgba(0,0,0,0.75)] flex items-center justify-between px-8 py-4">
+            className="relative z-20 max-w-6xl mx-auto mt-2 rounded-xl bg-[#111213]/95 backdrop-blur-2xl border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.45)] flex items-center justify-between px-5 sm:px-8 py-3">
 
-            <div className="flex item-center gap-4">
-                <img src={logo} alt="logo" className="w-10 h-10 rounded-full object-cover" />
-                <span className='text-xl  text-purple-500 hidden md:block font-semibold'>ExamNotes <span className='text-green-500'>AI</span></span>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+                <img src={logo} alt="ExamNotes AI" className="w-8 h-8 rounded-full object-cover" />
+                <span className='text-lg text-white font-bold'>ExamNotes <span className='text-[#f5a13b]'>AI</span></span>
             </div>
 
-            <div className='flex items-center gap-6 required'>
+            <div className='flex items-center gap-3 sm:gap-6 required'>
+                <ThemeToggle />
                 <div className='relative'>
                     <motion.div onClick={() => { setShowCredits(!showCredits); setShowProfileMenu(false) }}
                         whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.97 }}
-                        className='flex items-center gap-1 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-sm shadow:md cursor-pointer'>
-                        <span className=' text-xl'>💎</span>
-                        <span>{credits}</span>
+                        className='flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f5a13b]/10 border border-[#f5a13b]/25 text-[#ffc06b] text-sm cursor-pointer'>
+                        <span className='text-xs'>◆</span>
+                        <span>{availableAiChats} AI Chats</span>
                         <motion.span whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.97 }}
-                            className='ml-2 h-5 w-5 rounded-full bg-white text-black text-xs flex items-center justify-center font-bold'>
-                            ➕
+                            className='ml-1 h-4 w-4 rounded-full bg-[#f5a13b] text-[#17110a] text-xs flex items-center justify-center font-bold'>
+                            +
                         </motion.span>
                     </motion.div>
                     <AnimatePresence>
                         {showCredits &&
                             <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 10, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.5 }}
-                                className='absolute right-[-50px] mt-2 w-48 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.75)] p-4 text-sm text-white'>
-                                <h4 className='font-bold'>Buy Credits</h4>
-                                <p className='text-sm text-gray-300 mb-4'>Get more credits to use our AI features!</p>
-                                <button onClick={() => { setShowCredits(false); navigate('/pricing') }} className='bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-full text-sm font-bold cursor-pointer'>
+                                className='absolute right-[-50px] mt-2 w-48 rounded-xl bg-[#171819] backdrop-blur-xl border border-[#f5a13b]/20 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.75)] p-4 text-sm text-white'>
+                                <h4 className='font-bold'>AI chat limit</h4>
+                                <p className='text-sm text-gray-300 mb-4'>
+                                    {availableAiChats} total AI {availableAiChats === 1 ? 'chat' : 'chats'} available, including daily free chats and purchased credits.
+                                    Chats beyond the daily free limit use 10 credits each.
+                                </p>
+                                <button onClick={() => { setShowCredits(false); navigate('/pricing') }} className='bg-[#f5a13b] hover:bg-[#ffb858] text-[#17110a] py-2 px-4 rounded-lg text-sm font-bold cursor-pointer'>
                                     Buy More Credits
                                 </button>
                             </motion.div>
@@ -63,13 +71,15 @@ function Navbar() {
                 <div className='relative'>
                     <motion.div onClick={() => { setShowProfileMenu(!showProfileMenu); setShowCredits(false) }}
                         whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.97 }}
-                        className='flex items-center gap-1 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white text-sm shadow:md cursor-pointer'>
-                        <span className=' text-lg  '>{userData?.name?.slice(0, 1)}</span>
+                        className='flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white text-sm cursor-pointer'>
+                        <span className='text-sm'>{userData?.name?.slice(0, 1)}</span>
+                        <span className="hidden sm:inline">Profile</span>
+                        <span className="text-xs">⌄</span>
                     </motion.div>
                     <AnimatePresence>
                         {showProfileMenu &&
-                            <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 10, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.5 }}
-                                className='absolute right-0 mt-2 w-48 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.75)] p-4 text-sm text-white'>
+                            <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 10, scale: 1 }} exit={{ opacity: 0.4, y: -10, scale: 0.95 }} transition={{ duration: 0.5 }}
+                                className='absolute right-0 mt-2 w-48 rounded-xl bg-[#171819] backdrop-blur-xl border border-[#f5a13b]/20 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.75)] p-4 text-sm text-white'>
                                 <MenuItem text="History" onClick={() => { setShowProfileMenu(false); navigate('/history') }} />
                                 <div className="h-px bg-white/20 mx-2" />
                                 <MenuItem text="Logout" red onClick={handleLogout} />

@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { serverURL } from '../App';
 import axios from 'axios';
+import { getAvailableAiChats } from '../utils/credits';
+import BrandLogo from '../components/BrandLogo';
+import ThemeToggle from '../components/ThemeToggle';
 
 function Pricing() {
   const navigate = useNavigate();
@@ -35,7 +38,7 @@ function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-6 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-[#08090a] px-4 sm:px-6 py-12 relative overflow-hidden text-white">
 
       {/* ================= BACKGROUND DECORATIONS ================= */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -43,7 +46,7 @@ function Pricing() {
         {/* Top Left Glow */}
         <div
           className="
-            absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-300/20 blur-3xl"
+            absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#f5a13b]/10 blur-3xl"
         />
 
         {/* Right Side Glow */}
@@ -52,7 +55,7 @@ function Pricing() {
             absolute top-1/3 -right-32
             w-96 h-96
             rounded-full
-            bg-purple-300/20
+            bg-[#a56627]/10
             blur-3xl
           "
         />
@@ -63,7 +66,7 @@ function Pricing() {
             absolute -bottom-40 left-1/3
             w-96 h-96
             rounded-full
-            bg-blue-300/15
+            bg-[#f5a13b]/5
             blur-3xl
           "
         />
@@ -81,15 +84,15 @@ function Pricing() {
           flex items-center gap-2
           px-4 py-2.5
           rounded-xl
-          bg-white/80
+          bg-[#171819]
           backdrop-blur-md
-          border border-gray-200
-          text-gray-700
+          border border-[#d49a54]/25
+          text-[#ffc06b]
           font-medium
           shadow-sm
           transition-all duration-300
-          hover:bg-white
-          hover:text-black
+          hover:bg-[#211b13]
+          hover:text-white
           hover:shadow-md
           hover:-translate-x-1
           cursor-pointer
@@ -106,18 +109,25 @@ function Pricing() {
         <span>Back</span>
       </button>
 
+      <div className="relative z-10 mb-8 flex justify-center">
+        <BrandLogo />
+      </div>
+      <div className="absolute right-4 top-4 z-20 md:right-8 md:top-8">
+        <ThemeToggle />
+      </div>
+
       {/* ================= HEADER ================= */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 text-center mb-12 pt-20 md:pt-0"
+        className="relative z-10 text-center mb-12"
       >
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+        <h1 className="text-3xl md:text-4xl font-bold text-white">
           Buy Credits
         </h1>
 
-        <p className="text-gray-600 mt-2">
+        <p className="text-[#a09d98] mt-2">
           Choose a plan that suits your needs
         </p>
       </motion.div>
@@ -140,7 +150,7 @@ function Pricing() {
           title="Basic"
           price="Rs 100"
           amount={100}
-          credits="50 credits"
+          credits={`50 credits · ${getAvailableAiChats(50)} AI chats`}
           description="Perfect for quick revisions"
           features={[
             'Generate AI notes',
@@ -161,7 +171,7 @@ function Pricing() {
           title="Popular"
           price="Rs 200"
           amount={200}
-          credits="120 credits"
+          credits={`120 credits · ${getAvailableAiChats(120)} AI chats`}
           description="Best value for students"
           features={[
             'All Starter features',
@@ -181,7 +191,7 @@ function Pricing() {
           title="Pro Learner"
           price="Rs 500"
           amount={500}
-          credits="350 credits"
+          credits={`350 credits · ${getAvailableAiChats(350)} AI chats`}
           description="For serious learners and exam takers"
           features={[
             'All Premium features',
@@ -233,7 +243,7 @@ function PricingCard({
         cursor-pointer
         p-6
         rounded-2xl
-        bg-white/95
+        bg-[#141516]
         backdrop-blur-sm
         border
         transition-all
@@ -241,10 +251,10 @@ function PricingCard({
 
         ${
           isSelected
-            ? 'border-black shadow-xl shadow-black/10'
+            ? 'border-[#f5a13b] shadow-xl shadow-[#f5a13b]/10'
             : popular
-            ? 'border-indigo-400 shadow-lg shadow-indigo-500/10'
-            : 'border-gray-200 shadow-sm hover:shadow-lg'
+            ? 'border-[#d49a54]/60 shadow-lg shadow-[#f5a13b]/10'
+            : 'border-white/10 shadow-sm hover:border-[#d49a54]/40 hover:shadow-lg'
         }
       `}
     >
@@ -261,8 +271,8 @@ function PricingCard({
             px-2.5
             py-1
             rounded-lg
-            bg-indigo-600
-            text-white
+            bg-[#f5a13b]
+            text-[#17110a]
             font-medium
           "
         >
@@ -280,8 +290,8 @@ function PricingCard({
             px-2.5
             py-1
             rounded-lg
-            bg-black
-            text-white
+            bg-[#f5a13b]
+            text-[#17110a]
             font-medium
           "
         >
@@ -291,22 +301,22 @@ function PricingCard({
 
       {/* ================= TITLE ================= */}
 
-      <h2 className="text-xl font-semibold text-gray-900">
+      <h2 className="text-xl font-semibold text-white">
         {title}
       </h2>
 
-      <p className="text-gray-600 text-sm mt-2">
+      <p className="text-gray-400 text-sm mt-2">
         {description}
       </p>
 
       {/* ================= PRICE ================= */}
 
       <div className="mt-5">
-        <p className="text-3xl font-bold text-gray-900">
+        <p className="text-3xl font-bold text-white">
           {price}
         </p>
 
-        <p className="text-indigo-600 text-sm mt-1 font-medium">
+        <p className="text-[#ffc06b] text-sm mt-1 font-medium">
           {credits}
         </p>
       </div>
@@ -331,10 +341,8 @@ function PricingCard({
 
           ${
             isPayingThisCard
-              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-              : isSelected
-              ? 'bg-black text-white hover:bg-gray-800 shadow-md'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+              ? 'bg-gray-700 text-gray-300 cursor-not-allowed'
+              : 'bg-[#f5a13b] text-[#17110a] hover:bg-[#ffb858] shadow-md'
           }
         `}
       >
@@ -343,13 +351,13 @@ function PricingCard({
 
       {/* ================= FEATURES ================= */}
 
-      <ul className="mt-6 space-y-3 text-sm text-gray-600">
+      <ul className="mt-6 space-y-3 text-sm text-gray-300">
         {features.map((feature, index) => (
           <li
             key={index}
             className="flex items-start gap-2"
           >
-            <span className="text-green-600 font-semibold">
+            <span className="text-[#ffc06b] font-semibold">
               ✓
             </span>
 

@@ -1,5 +1,21 @@
 import PDFDocument from "pdfkit";
 
+const formatNoteValue = (value) => {
+    if (typeof value === "string" || typeof value === "number") {
+        return String(value);
+    }
+    if (Array.isArray(value)) {
+        return value.map(formatNoteValue).filter(Boolean).join(", ");
+    }
+    if (value && typeof value === "object") {
+        return Object.entries(value)
+            .filter(([, entry]) => entry !== null && entry !== undefined && entry !== "")
+            .map(([key, entry]) => `${key}: ${formatNoteValue(entry)}`)
+            .join(" | ");
+    }
+    return "";
+};
+
 const section = (doc, title) => {
     doc.moveDown(0.8);
 
@@ -123,7 +139,7 @@ export const pdfDownload = async (req, res) => {
             topics.forEach((topic) => {
                 doc.font("Helvetica")
                     .fontSize(11)
-                    .text(`• ${topic}`, {
+                    .text(`• ${formatNoteValue(topic)}`, {
                         indent: 15
                     });
             });
@@ -142,7 +158,7 @@ export const pdfDownload = async (req, res) => {
         (results.revisionPoints || []).forEach((point) => {
             doc.font("Helvetica")
                 .fontSize(11)
-                .text(`• ${point}`, {
+                .text(`• ${formatNoteValue(point)}`, {
                     indent: 15
                 });
         });
@@ -157,7 +173,7 @@ export const pdfDownload = async (req, res) => {
         (results.questions?.short || []).forEach((question) => {
             doc.font("Helvetica")
                 .fontSize(11)
-                .text(`• ${question}`, {
+                .text(`• ${formatNoteValue(question)}`, {
                     indent: 15
                 });
         });
@@ -171,7 +187,7 @@ export const pdfDownload = async (req, res) => {
         (results.questions?.long || []).forEach((question) => {
             doc.font("Helvetica")
                 .fontSize(11)
-                .text(`• ${question}`, {
+                .text(`• ${formatNoteValue(question)}`, {
                     indent: 15
                 });
         });

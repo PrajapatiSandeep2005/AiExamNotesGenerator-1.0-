@@ -10,7 +10,10 @@ import {getCurrentUser} from './services/api.js';
 import { useDispatch, useSelector } from 'react-redux';
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
 import PaymentFailed from './pages/PaymentFailed.jsx'
-export const serverURL = "https://ai-exam-notes-backend-0rlt.onrender.com";
+export const serverURL = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV
+    ? "http://localhost:5000"
+    : "https://ai-exam-notes-backend-0rlt.onrender.com");
 
 function App () {
   const dispatch = useDispatch();

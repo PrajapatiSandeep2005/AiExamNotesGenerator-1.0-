@@ -1,11 +1,190 @@
 @import "tailwindcss";
 
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f5f2ed;
+  background: #08090a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  --accent: #f5a13b;
+  --accent-light: #ffc06b;
+  --surface: rgba(17, 18, 19, 0.94);
+  --surface-raised: #1a1b1d;
+  --line: rgba(232, 174, 94, 0.2);
+  --muted: #a09d98;
+}
+
 * {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #49351f #101112;
 }
 
-* ::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
+*::-webkit-scrollbar-track {
+  background: #101112;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #49351f;
+  border-radius: 999px;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 72% 16%, rgba(135, 77, 22, 0.13), transparent 28rem),
+    #08090a;
+  color: #f5f2ed;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(245, 161, 59, 0.35);
+  color: #fff;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(ellipse at 72% 16%, rgba(129, 140, 248, 0.11), transparent 30rem),
+    #f4f7fb;
+  color: #172033;
+}
+
+html[data-theme="light"] * {
+  scrollbar-color: #c2cbd8 #edf1f6;
+}
+
+html[data-theme="light"] *::-webkit-scrollbar-track {
+  background: #edf1f6;
+}
+
+html[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: #c2cbd8;
+}
+
+html[data-theme="light"] [class*="bg-[#08090a]"],
+html[data-theme="light"] [class*="bg-[#0b0c0d]"],
+html[data-theme="light"] [class*="bg-[#0d0e0f]"],
+html[data-theme="light"] [class*="bg-[#111213]"],
+html[data-theme="light"] [class*="bg-[#141516]"],
+html[data-theme="light"] [class*="bg-[#171513]"],
+html[data-theme="light"] [class*="bg-[#171819]"],
+html[data-theme="light"] [class*="bg-[#191817]"],
+html[data-theme="light"] [class*="bg-[#211b13]"],
+html[data-theme="light"] [class*="bg-[#2a2015]"],
+html[data-theme="light"] [class*="bg-[#302417]"] {
+  background-color: #fff !important;
+}
+
+html[data-theme="light"] [class*="from-[#111213]"],
+html[data-theme="light"] [class*="to-[#0a0b0c]"] {
+  background-image: none !important;
+  background-color: #fff !important;
+}
+
+html[data-theme="light"] [class~="bg-white/5"],
+html[data-theme="light"] [class~="bg-white/10"],
+html[data-theme="light"] [class~="bg-white/[0.03]"] {
+  background-color: #f1f4f8 !important;
+}
+
+html[data-theme="light"] [class~="text-white"],
+html[data-theme="light"] [class~="text-gray-100"],
+html[data-theme="light"] [class~="text-gray-200"],
+html[data-theme="light"] [class*="text-[#eee9e1]"] {
+  color: #172033 !important;
+}
+
+html[data-theme="light"] [class~="text-gray-300"],
+html[data-theme="light"] [class~="text-gray-400"],
+html[data-theme="light"] [class~="text-gray-500"],
+html[data-theme="light"] [class*="text-[#aaa6a0]"],
+html[data-theme="light"] [class*="text-[#a09d98]"] {
+  color: #596579 !important;
+}
+
+html[data-theme="light"] [class*="text-[#ffc06b]"],
+html[data-theme="light"] [class*="text-[#e6a65d]"],
+html[data-theme="light"] [class*="text-[#f5a13b]"] {
+  color: #a85b08 !important;
+}
+
+html[data-theme="light"] [class*="border-white/"],
+html[data-theme="light"] [class*="border-[#d49a54]"],
+html[data-theme="light"] [class*="border-[#8b6337]"] {
+  border-color: #d8e0ea !important;
+}
+
+html[data-theme="light"] .notes-page-header {
+  background-color: rgba(255, 255, 255, var(--nav-opacity)) !important;
+  backdrop-filter: blur(var(--nav-blur));
+  border-color: rgba(203, 213, 225, var(--nav-border-opacity)) !important;
+}
+
+html[data-theme="light"] .theme-toggle {
+  background-color: #fff !important;
+  color: #273249 !important;
+  border-color: #d8e0ea !important;
+}
+
+html[data-theme="light"] [class*="hover:bg-white/"]:hover {
+  background-color: #e9eef5 !important;
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  color: #172033;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #758196;
+}
+
+html[data-theme="light"] .text-red-400,
+html[data-theme="light"] .text-red-500 {
+  color: #c2413a;
+}
+
+html[data-theme="light"] .text-green-300 {
+  color: #15803d;
+}
+
+html[data-theme="light"] h1 {
+  text-shadow: none !important;
+}
+
+html[data-theme="light"] ::selection {
+  background: rgba(245, 161, 59, 0.35);
+  color: #172033;
+}

@@ -1,4 +1,3 @@
-import React from 'react'
 import { motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
@@ -12,19 +11,21 @@ function Footer() {
     const dispatch = useDispatch();
      const handleLogout = async () => {
         try {
-            await axios.post(serverURL + "/api/auth/logout", { withCredentials: true });
-            dispatch(setUserData(null));
-            navigate("/auth");
-        } catch (error) {
-            console.error("Error logging out:", error);
-        }
+           await axios.post(serverURL + "/api/auth/logout", {}, { withCredentials: true });
+       } catch (error) {
+           console.error("Error logging out:", error);
+       } finally {
+           localStorage.removeItem("token");
+           dispatch(setUserData(null));
+           navigate("/auth");
+       }
     };
     return (
         <motion.div initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.5 }}
             viewport={{ once: true }}
-            className='z-10 mx-6 mb-6 mt-24 rounded-2xl bg-gradient-to-br from-black/90 via-black/80 to-black/90 backdrop-blur-2xl border border-white/10 shadow-[0_22px_70px_4px_rgba(0,0,0,0.75)] px-8 py-8'>
+            className='z-10 max-w-6xl mx-auto mb-6 mt-16 rounded-xl bg-[#111213] backdrop-blur-2xl border border-white/10 shadow-[0_22px_70px_4px_rgba(0,0,0,0.5)] px-6 sm:px-8 py-8'>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-8 items-start'>
                 <motion.div
                     whileHover={{ rotateX: 8, rotateY: -8 }}
@@ -32,11 +33,11 @@ function Footer() {
                     <div className='flex items-center gap-4 cursor-pointer'
                         style={{ transform: "translateZ(30px)" }}>
                         <img src={logo} alt="logo" className="w-10 h-10 rounded-full" />
-                        <span className='text-lg  font-semibold bg-gradient-to-br from-white via-gray-300 to-white bg-clip-text text-transparent'
-                            style={{ textShadow: "0 6px 18px rgba(0,0,0,0.5)" }}>ExamNotes <span className='text-gray-400'>AI</span></span>
+                        <span className='text-lg font-semibold text-white'
+                            style={{ textShadow: "0 6px 18px rgba(0,0,0,0.5)" }}>ExamNotes <span className='text-[#f5a13b]'>AI</span></span>
 
                     </div>
-                    <p className="text-sm text-gray-300 max-w-sm">ExamNotes AI is a revolutionary platform that leverages artificial intelligence to provide students with personalized study materials and exam preparation resources.</p>
+                    <p className="text-sm text-gray-400 max-w-sm">ExamNotes AI helps students create personalized study materials and prepare for exams.</p>
 
                 </motion.div>
                 

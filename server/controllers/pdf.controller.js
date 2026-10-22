@@ -89,11 +89,20 @@ const renderMarkdown = (doc, text = "") => {
 
 export const pdfDownload = async (req, res) => {
     try {
-        const { results } = req.body;
+        const results = req.body?.results;
 
         if (!results) {
             return res.status(400).json({
                 message: "No notes data provided"
+            });
+        }
+
+        const notes = results.content && typeof results.content === "object"
+            ? results.content
+            : results;
+        if (typeof notes !== "object" || Array.isArray(notes)) {
+            return res.status(400).json({
+                message: "Invalid notes data provided"
             });
         }
 
@@ -125,18 +134,18 @@ export const pdfDownload = async (req, res) => {
         doc.font("Helvetica-Bold")
             .fontSize(13)
             .fillColor("#111827")
-            .text(`Importance: ${results.importance || "N/A"}`);
+            .text(`Importance: ${notes.importance || "N/A"}`);
 
         // Sub Topics
         section(doc, "Sub Topics");
 
-        Object.entries(results.subTopics || {}).forEach(([star, topics]) => {
+        Object.entries(notes.subTopics || {}).forEach(([star, topics]) => {
 
             doc.font("Helvetica-Bold")
                 .fontSize(12)
                 .text(`${star} Topics`);
 
-            topics.forEach((topic) => {
+            (Array.isArray(topics) ? topics : [topics]).forEach((topic) => {
                 doc.font("Helvetica")
                     .fontSize(11)
                     .text(`• ${formatNoteValue(topic)}`, {
@@ -150,12 +159,12 @@ export const pdfDownload = async (req, res) => {
         // Detailed Notes
         section(doc, "Detailed Notes");
 
-        renderMarkdown(doc, results.notes);
+        renderMarkdown(doc, notes.notes);
 
         // Quick Revision Points
         section(doc, "Quick Revision Points");
 
-        (results.revisionPoints || []).forEach((point) => {
+        (notes.revisionPoints || []).forEach((point) => {
             doc.font("Helvetica")
                 .fontSize(11)
                 .text(`• ${formatNoteValue(point)}`, {
@@ -166,11 +175,12 @@ export const pdfDownload = async (req, res) => {
         // Important Questions
         section(doc, "Important Questions");
 
+        const questions = notes.questions || {};
         doc.font("Helvetica-Bold")
             .fontSize(12)
             .text("Short Questions");
 
-        (results.questions?.short || []).forEach((question) => {
+        (questions.short || []).forEach((question) => {
             doc.font("Helvetica")
                 .fontSize(11)
                 .text(`• ${formatNoteValue(question)}`, {
@@ -184,13 +194,44 @@ export const pdfDownload = async (req, res) => {
             .fontSize(12)
             .text("Long Questions");
 
-        (results.questions?.long || []).forEach((question) => {
+        (questions.long || []).forEach((question) => {
             doc.font("Helvetica")
                 .fontSize(11)
                 .text(`• ${formatNoteValue(question)}`, {
                     indent: 15
                 });
         });
+
+        if (questions.diagram) {
+            doc.moveDown(0.4);
+            doc.font("Helvetica-Bold")
+                .fontSize(12)
+                .text("Diagram Question");
+            doc.font("Helvetica")
+                .fontSize(11)
+                .text(formatNoteValue(questions.diagram), { indent: 15 });
+        }
+
+        if (notes.diagram?.data) {
+            section(doc, "Diagram Source");
+            doc.font("Courier")
+                .fontSize(9)
+                .text(formatNoteValue(notes.diagram.data));
+        }
+
+        if (Array.isArray(notes.charts) && notes.charts.length) {
+            section(doc, "Chart Data");
+            notes.charts.forEach((chart) => {
+                doc.font("Helvetica-Bold")
+                    .fontSize(11)
+                    .text(formatNoteValue(chart.title || chart.type || "Chart"));
+                (chart.data || []).forEach((point) => {
+                    doc.font("Helvetica")
+                        .fontSize(10)
+                        .text(`• ${formatNoteValue(point)}`, { indent: 15 });
+                });
+            });
+        }
 
         doc.end();
 

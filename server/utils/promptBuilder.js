@@ -48,13 +48,14 @@ REVISION MODE RULES (CRITICAL):
   - revisionPoints MUST summarize ALL important facts
 
 - If REVISION MODE is OFF:
-  - Notes must be DETAILED but exam-focused
-  - Each topic should include:
-    - definition
-    - short explanation
-    - examples (if applicable)
-  - Paragraph length: max 2–4 lines
-  - No storytelling, no extra theory
+  - Notes must be thorough, explanatory, and exam-focused rather than a brief summary.
+  - Organize the response under 4–7 useful Markdown headings based on the topic.
+  - For each major concept, explain what it is, how or why it works, and how it relates to the wider topic.
+  - Include a relevant worked example, application, comparison, formula, or sequence of steps whenever appropriate.
+  - Use clear paragraphs of about 3–5 sentences; include enough detail for a student to understand the concept without external notes.
+  - Explain technical terms when first introduced and highlight common exam distinctions or likely mistakes where relevant.
+  - Keep explanations focused: do not repeat points, add unrelated theory, or invent facts.
+  - revisionPoints MUST still provide a concise summary of the key facts for quick review.
 
 IMPORTANCE RULES:
 - Divide sub-topics into THREE categories:

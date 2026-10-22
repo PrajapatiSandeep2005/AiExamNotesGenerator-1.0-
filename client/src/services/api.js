@@ -23,9 +23,9 @@ export const generateNotes = async (payload) => {
     return result.data;
 }
 
-export const downloadPdf = async (result) => {
+export const downloadPdf = async (result, visualImages = []) => {
     try{
-        const response = await axios.post(serverURL + "/api/pdf/generate-pdf", { results :result }, { withCredentials: true, responseType: 'blob' });
+        const response = await axios.post(serverURL + "/api/pdf/generate-pdf", { results: result, visualImages }, { withCredentials: true, responseType: 'blob' });
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');

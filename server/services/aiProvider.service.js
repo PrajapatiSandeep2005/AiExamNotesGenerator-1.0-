@@ -50,32 +50,33 @@ const readResponse = async (response, providerName) => {
     return body;
 };
 
-const callGroq = async (prompt) => {
-    if (!process.env.GROQ_API_KEY) {
-        const error = new Error("GROQ_API_KEY is not configured.");
+const callGrok = async (prompt) => {
+    const apiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
+    if (!apiKey) {
+        const error = new Error("GROK_API_KEY or XAI_API_KEY is not configured.");
         error.statusCode = 503;
         throw error;
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model: "openai/gpt-oss-120b",
+            model: process.env.GROK_MODEL || "grok-3-mini",
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             max_completion_tokens: 8192,
         }),
     });
-    const body = await readResponse(response, "Groq");
+    const body = await readResponse(response, "Grok");
     const text = body?.choices?.[0]?.message?.content;
     if (typeof text !== "string" || !text.trim()) {
-        throw new Error("Groq returned an empty notes response.");
+        throw new Error("Grok returned an empty notes response.");
     }
-    return parseProviderResponse(text, "Groq");
+    return parseProviderResponse(text, "Grok");
 };
 
 const callCloudflare = async (prompt) => {
@@ -137,11 +138,13 @@ const callCloudflare = async (prompt) => {
 
 const providers = [
     { id: "gemini", name: "Gemini", generate: generateGeminiResponse },
-    { id: "groq", name: "Groq", generate: callGroq },
+    { id: "grok", name: "Grok", generate: callGrok },
     { id: "cloudflare", name: "Cloudflare", generate: callCloudflare },
 ];
 
-export const generateWithAiProvider = async (prompt, selectedModel = "auto") => {
+export const generateWithAiProvider = async (prompt, selectedModel = "auto", reserveForProvider, releaseReservation) => {
+    // Accept the previous client value during rollout, but use the new Grok tier.
+    if (selectedModel === "groq") selectedModel = "grok";
     if (selectedModel !== "auto") {
         const selectedProvider = providers.find(({ id }) => id === selectedModel);
         if (!selectedProvider) {
@@ -151,11 +154,14 @@ export const generateWithAiProvider = async (prompt, selectedModel = "auto") => 
         }
 
         try {
+            await reserveForProvider?.(selectedProvider.id);
             return {
                 content: validateNotes(await selectedProvider.generate(prompt), selectedProvider.name),
                 providerUsed: selectedProvider.name,
+                providerId: selectedProvider.id,
             };
         } catch (error) {
+            await releaseReservation?.();
             if (!error.statusCode) {
                 error.statusCode = 502;
             }
@@ -164,19 +170,24 @@ export const generateWithAiProvider = async (prompt, selectedModel = "auto") => 
     }
 
     const failures = [];
+    const failureErrors = [];
     for (const provider of providers) {
         try {
+            await reserveForProvider?.(provider.id);
             return {
                 content: validateNotes(await provider.generate(prompt), provider.name),
                 providerUsed: provider.name,
+                providerId: provider.id,
             };
         } catch (error) {
+            await releaseReservation?.();
             failures.push(`${provider.name}: ${error.message}`);
+            failureErrors.push(error);
             console.warn(`${provider.name} generation failed; trying the next provider.`);
         }
     }
 
     const error = new Error(`All AI providers failed. ${failures.join(" ")}`);
-    error.statusCode = 502;
+    error.statusCode = failureErrors.length && failureErrors.every(({ statusCode }) => statusCode === 403) ? 403 : 502;
     throw error;
 };

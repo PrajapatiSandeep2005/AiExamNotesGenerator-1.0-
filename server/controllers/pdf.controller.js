@@ -87,9 +87,68 @@ const renderMarkdown = (doc, text = "") => {
     });
 };
 
+const ensureChartSpace = (doc, height = 250) => {
+    if (doc.y > doc.page.height - doc.page.margins.bottom - height) doc.addPage();
+};
+
+// Render source chart data as PDF vectors. This avoids relying exclusively on
+// a responsive browser SVG capture when exporting Recharts visualizations.
+const renderChart = (doc, chart) => {
+    const points = Array.isArray(chart?.data)
+        ? chart.data.filter((point) => Number.isFinite(Number(point?.value)))
+        : [];
+    if (!points.length) return;
+    ensureChartSpace(doc);
+    const x = doc.page.margins.left;
+    const chartY = doc.y + 18;
+    const width = 495;
+    const baseline = chartY + 150;
+    const colors = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4"];
+    const max = Math.max(...points.map((point) => Number(point.value)), 1);
+    doc.font("Helvetica-Bold").fontSize(11).fillColor("#1e293b").text(chart.title || "Generated Chart");
+
+    if (chart.type === "pie") {
+        const total = points.reduce((sum, point) => sum + Math.max(0, Number(point.value)), 0) || 1;
+        const centerX = x + 120;
+        const centerY = chartY + 88;
+        let angle = -Math.PI / 2;
+        points.forEach((point, index) => {
+            const nextAngle = angle + (Math.max(0, Number(point.value)) / total) * Math.PI * 2;
+            doc.save().fillColor(colors[index % colors.length]).moveTo(centerX, centerY)
+                .arc(centerX, centerY, 70, angle, nextAngle).lineTo(centerX, centerY).fill().restore();
+            doc.fillColor("#334155").font("Helvetica").fontSize(9)
+                .text(`${point.name || `Item ${index + 1}`}: ${point.value}`, x + 230, chartY + index * 20, { width: 240 });
+            angle = nextAngle;
+        });
+    } else {
+        doc.strokeColor("#94a3b8").lineWidth(1).moveTo(x + 30, chartY).lineTo(x + 30, baseline).lineTo(x + width, baseline).stroke();
+        const step = (width - 55) / points.length;
+        const coordinates = points.map((point, index) => ({ x: x + 30 + step * index + step / 2, y: baseline - (Math.max(0, Number(point.value)) / max) * 125, point }));
+        if (chart.type === "line") {
+            doc.strokeColor(colors[0]).lineWidth(2);
+            coordinates.forEach((point, index) => index ? doc.lineTo(point.x, point.y) : doc.moveTo(point.x, point.y));
+            doc.stroke();
+            coordinates.forEach((point) => doc.circle(point.x, point.y, 3).fillColor(colors[0]).fill());
+        } else {
+            coordinates.forEach((point, index) => {
+                const barWidth = Math.max(12, step * 0.55);
+                doc.rect(point.x - barWidth / 2, point.y, barWidth, baseline - point.y).fillColor(colors[index % colors.length]).fill();
+            });
+        }
+        coordinates.forEach((point, index) => {
+            doc.fillColor("#334155").font("Helvetica").fontSize(8)
+                .text(String(point.point.name || index + 1), point.x - step / 2, baseline + 5, { width: step, align: "center" })
+                .text(String(point.point.value), point.x - step / 2, baseline - 13, { width: step, align: "center" });
+        });
+    }
+    doc.y = chartY + 190;
+    doc.moveDown(0.5);
+};
+
 export const pdfDownload = async (req, res) => {
     try {
         const results = req.body?.results;
+        const visualImages = Array.isArray(req.body?.visualImages) ? req.body.visualImages : [];
 
         if (!results) {
             return res.status(400).json({
@@ -220,8 +279,9 @@ export const pdfDownload = async (req, res) => {
         }
 
         if (Array.isArray(notes.charts) && notes.charts.length) {
-            section(doc, "Chart Data");
+            section(doc, "Generated Charts");
             notes.charts.forEach((chart) => {
+                renderChart(doc, chart);
                 doc.font("Helvetica-Bold")
                     .fontSize(11)
                     .text(formatNoteValue(chart.title || chart.type || "Chart"));
@@ -230,6 +290,28 @@ export const pdfDownload = async (req, res) => {
                         .fontSize(10)
                         .text(`• ${formatNoteValue(point)}`, { indent: 15 });
                 });
+            });
+        }
+
+        // The client sends rendered Mermaid/Recharts SVGs as PNG data URLs.
+        // PDFKit cannot render those browser components itself, so embed their
+        // captured PNG versions in a dedicated visual section.
+        const validVisuals = visualImages.filter(({ data }) => (
+            typeof data === "string" && /^data:image\/png;base64,/.test(data)
+        ));
+        if (validVisuals.length) {
+            section(doc, "Generated Visuals");
+            validVisuals.forEach(({ title, data }, index) => {
+                const image = Buffer.from(data.replace(/^data:image\/png;base64,/, ""), "base64");
+                const imageHeight = 280;
+                if (doc.y > doc.page.height - doc.page.margins.bottom - imageHeight - 35) {
+                    doc.addPage();
+                }
+                doc.font("Helvetica-Bold").fontSize(11).fillColor("#1e293b")
+                    .text(title || `Visual ${index + 1}`);
+                doc.moveDown(0.25);
+                doc.image(image, { fit: [495, imageHeight], align: "center" });
+                doc.moveDown(0.7);
             });
         }
 

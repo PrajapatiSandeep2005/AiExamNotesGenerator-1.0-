@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { serverURL } from '../App';
 import axios from 'axios';
-import { getAvailableAiChats } from '../utils/credits';
 import BrandLogo from '../components/BrandLogo';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -150,7 +149,7 @@ function Pricing() {
           title="Basic"
           price="Rs 100"
           amount={100}
-          credits={`50 credits · ${getAvailableAiChats(50)} AI chats`}
+          credits="50 credits"
           description="Perfect for quick revisions"
           features={[
             'Generate AI notes',
@@ -171,7 +170,7 @@ function Pricing() {
           title="Popular"
           price="Rs 200"
           amount={200}
-          credits={`120 credits · ${getAvailableAiChats(120)} AI chats`}
+          credits="120 credits"
           description="Best value for students"
           features={[
             'All Starter features',
@@ -191,7 +190,7 @@ function Pricing() {
           title="Pro Learner"
           price="Rs 500"
           amount={500}
-          credits={`350 credits · ${getAvailableAiChats(350)} AI chats`}
+          credits="350 credits"
           description="For serious learners and exam takers"
           features={[
             'All Premium features',

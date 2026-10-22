@@ -7,19 +7,12 @@ import Sidebar from '../components/Sidebar';
 import FinalResult from '../components/FinalResult';
 import BrandLogo from '../components/BrandLogo';
 import ThemeToggle from '../components/ThemeToggle';
-import {
-  FREE_AI_CHAT_LIMIT,
-  getDailyAiChatsByProvider,
-  getDailyAiChatsRemaining,
-  getTotalAvailableAiChats,
-} from '../utils/credits';
+import { getModelUsage } from '../utils/credits';
 
 const Notes = () => {
   const navigate = useNavigate();
   const { userData } = useSelector((state) => state.user);
-  const dailyFreeChatsRemaining = getDailyAiChatsRemaining(userData);
-  const availableAiChats = getTotalAvailableAiChats(userData);
-  const providerUsage = getDailyAiChatsByProvider(userData);
+  const modelUsage = getModelUsage(userData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState(null);
@@ -36,23 +29,7 @@ const Notes = () => {
     window.addEventListener("scroll", updateScrollState, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollState);
   }, []);
-  const providerLimits = [
-    {
-      name: "Gemini Flash",
-      model: "gemini-flash-latest",
-      limit: "Up to 1,500 requests/day",
-    },
-    {
-      name: "Groq",
-      model: "GPT-OSS 120B",
-      limit: "1,000+ requests/day",
-    },
-    {
-      name: "Cloudflare AI",
-      model: "Llama 3.1 8B",
-      limit: "10,000 neurons/day",
-    },
-  ];
+  const providerLimits = Object.values(modelUsage);
 
   return (
     <div className='min-h-screen bg-[#08090a] px-4 sm:px-6 py-5 sm:py-8'>
@@ -84,14 +61,14 @@ const Notes = () => {
             >
               <option value="auto" className="bg-[#141516] text-white">Auto-Switch (Recommended)</option>
               <option value="gemini" className="bg-[#141516] text-white">Gemini</option>
-              <option value="groq" className="bg-[#141516] text-white">Groq (Fast)</option>
+              <option value="grok" className="bg-[#141516] text-white">Grok (Deep search)</option>
               <option value="cloudflare" className="bg-[#141516] text-white">Cloudflare AI</option>
             </select>
           </div>
 
           <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#f5a13b]/10 border border-[#f5a13b]/25 text-[#ffc06b] text-sm" onClick={() => navigate('/pricing')}>
             <span className='text-xs'>◆</span>
-            <span>{availableAiChats} AI Chats</span>
+            <span>{userData?.credits ?? 0} Credits</span>
             <motion.span whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.97 }}
               className='ml-1 h-4 w-4 rounded-full bg-[#f5a13b] text-black text-xs flex items-center justify-center font-bold cursor-pointer'>
               +
@@ -111,36 +88,31 @@ const Notes = () => {
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-[#ffc06b]">AI provider free-tier limits</h2>
+            <h2 className="text-sm font-semibold text-[#ffc06b]">AI usage and model limits</h2>
             <p className="mt-1 text-xs text-[#a09d98]">
-              Published provider maxima are not live remaining quota. Your 50 daily free chats are shared across models.
+              Credits are deducted after a successful generation. Per-model and shared daily caps protect availability.
             </p>
           </div>
           <p className="shrink-0 rounded-lg border border-[#f5a13b]/25 bg-[#f5a13b]/10 px-3 py-2 text-sm text-[#ffc06b]">
-            Daily free chats left: <strong>{dailyFreeChatsRemaining}/{FREE_AI_CHAT_LIMIT}</strong>
+            Credits: <strong>{userData?.credits ?? 0}</strong> · Daily cap left: <strong>{userData?.dailyCreditsRemaining ?? 50}/{userData?.dailyCreditCap ?? 50}</strong>
           </p>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {providerLimits.map((provider) => {
-            const usedToday = providerUsage[provider.name.toLowerCase().split(" ")[0]] || 0;
-            const remainingWithModel = Math.min(
-              dailyFreeChatsRemaining,
-              Math.max(0, FREE_AI_CHAT_LIMIT - usedToday),
-            );
             return (
               <div
-                key={provider.name}
+                key={provider.id}
                 className="rounded-lg border border-white/10 bg-white/[0.03] p-3"
               >
-                <p className="text-sm font-medium text-white">{provider.name}</p>
-                <p className="mt-1 text-xs text-[#a09d98]">{provider.model}</p>
-                <p className="mt-2 text-sm font-semibold text-[#ffc06b]">{provider.limit}</p>
+                <p className="text-sm font-medium text-white">{provider.label}</p>
+                <p className="mt-1 text-xs text-[#a09d98]">{provider.creditCost} credit{provider.creditCost > 1 ? 's' : ''} per generation</p>
+                <p className="mt-2 text-sm font-semibold text-[#ffc06b]">Daily limit: {provider.dailyLimit}</p>
                 <p className="mt-2 text-xs text-gray-300">
-                  {usedToday} free {usedToday === 1 ? "chat" : "chats"} used today
+                  {provider.usedToday} used today · {provider.dailyRemaining} model requests left
                 </p>
                 <p className="mt-1 text-xs text-gray-400">
-                  {remainingWithModel} left if using this model
-                  <span className="block">from the shared daily pool</span>
+                  {provider.estimatedRemaining} estimated generations remaining
+                  <span className="block">based on credits and all daily caps</span>
                 </p>
               </div>
             );

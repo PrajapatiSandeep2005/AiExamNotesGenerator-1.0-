@@ -74,7 +74,10 @@ function TopicForm({ setResults, setLoading, loading, setError, selectedAiModel 
                     dailyAiChatsByProvider: responseData.dailyAiChatsByProvider,
                 }));
             }
-            setError(responseData?.message || error.message || "Failed to fetch notes. Please try again.");
+            const message = responseData?.message || error.message || "Failed to fetch notes. Please try again.";
+            setError(error.response?.status === 403
+                ? `${message}. Upgrade your credits or wait for the daily reset.`
+                : message);
             setLoading(false);
         }
     };

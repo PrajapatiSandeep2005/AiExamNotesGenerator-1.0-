@@ -103,7 +103,7 @@ function History() {
             onClick={() => navigate('/pricing')}
           >
             <span className='text-xs'>◆</span>
-            <span>{availableAiChats} AI Chats</span>
+            <span>{availableAiChats} Credits</span>
             <motion.span
               whileHover={{ scale: 1.2 }}
               whileTap={{ scale: 0.97 }}

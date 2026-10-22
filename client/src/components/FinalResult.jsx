@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown';
 import MermaidSetup from './MermaidSetup';
 import RechartSetup from './RechartSetup';
@@ -36,6 +36,21 @@ const markDownComponent = {
 
 function FinalResult({ results }) {
   const [quickRevision, setQuickRevision] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const visualRef = useRef(null);
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const svgs = [...(visualRef.current?.querySelectorAll('svg') || [])];
+      const visualImages = await Promise.all(svgs.map(async (svg, index) => ({
+        title: svg.closest('[data-pdf-visual]')?.dataset.pdfVisual || `Visual ${index + 1}`,
+        data: await svgToPng(svg),
+      })));
+      await downloadPdf(results, visualImages.filter(({ data }) => data));
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   // Extract the nested 'content' object where all the AI data actually lives
   const data = results?.content;
@@ -55,6 +70,7 @@ function FinalResult({ results }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
+      ref={visualRef}
       className='p-3 space-y-8 bg-transparent text-[#eee9e1]'
     >
       <motion.div
@@ -88,9 +104,9 @@ function FinalResult({ results }) {
             </button>
           )}
 
-          <button onClick={() => downloadPdf(results)}
-            className='px-4 py-2 rounded-lg text-sm cursor-pointer font-medium bg-[#f5a13b] text-[#17110a] hover:bg-[#ffb858]'>
-            ⬇️ Download PDF
+          <button onClick={handleDownload} disabled={downloading}
+            className='px-4 py-2 rounded-lg text-sm cursor-pointer font-medium bg-[#f5a13b] text-[#17110a] hover:bg-[#ffb858] disabled:cursor-not-allowed disabled:opacity-60'>
+            {downloading ? 'Preparing PDF…' : '⬇️ Download PDF'}
           </button>
         </div>
       </motion.div>
@@ -143,7 +159,7 @@ function FinalResult({ results }) {
       {data.diagram &&
         <section>
           <SectionHeader icon="📊" title="Diagram" color="cyan" />
-          <MermaidSetup diagram={data.diagram?.data} />
+          <div data-pdf-visual="Generated diagram"><MermaidSetup diagram={data.diagram?.data} /></div>
           <p className='text-sm text-gray-400 mt-2 italic'>
             ℹ️ If you need this diagram for future reference or revision , consider taking a screenshot and save it.
           </p>
@@ -153,7 +169,7 @@ function FinalResult({ results }) {
       {data.charts?.length > 0 &&
         <section>
           <SectionHeader icon="📈" title="Charts" color="indigo" />
-          <RechartSetup charts={data.charts} />
+          <div data-pdf-visual="Generated chart"><RechartSetup charts={data.charts} /></div>
           <p className='text-sm text-gray-400 mt-2 italic'>
             ℹ️ If you need this charts for future reference or revision , consider taking a screenshot and save it.
           </p>
@@ -219,3 +235,33 @@ function SectionHeader({ title, icon, color }) {
 }
 
 export default FinalResult;
+
+// Mermaid and Recharts render SVG in the browser. Convert it to PNG so the
+// server-side PDFKit renderer can embed the exact visual the user sees.
+async function svgToPng(svg) {
+  try {
+    const copy = svg.cloneNode(true);
+    copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const bounds = svg.getBoundingClientRect();
+    const width = Math.max(320, Math.ceil(bounds.width || Number(svg.getAttribute('width')) || 640));
+    const height = Math.max(180, Math.ceil(bounds.height || Number(svg.getAttribute('height')) || 360));
+    copy.setAttribute('width', width);
+    copy.setAttribute('height', height);
+    const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml;charset=utf-8' }));
+    const image = new Image();
+    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; image.src = url; });
+    const canvas = document.createElement('canvas');
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.scale(2, 2);
+    context.drawImage(image, 0, 0, width, height);
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.warn('Could not capture a visual for the PDF:', error);
+    return null;
+  }
+}

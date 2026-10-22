@@ -29,9 +29,14 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  dailyCreditUsage: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   dailyAiChatsByProvider: {
     gemini: { type: Number, default: 0, min: 0 },
-    groq: { type: Number, default: 0, min: 0 },
+    grok: { type: Number, default: 0, min: 0 },
     cloudflare: { type: Number, default: 0, min: 0 },
   },
   iscreditAvailable: {

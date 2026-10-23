@@ -32,7 +32,7 @@ An AI-powered study platform that turns a topic into structured, exam-focused no
 
 Instead of returning only a general chat response, the application structures generated content into detailed notes, important subtopics, revision points, and exam-style questions. Users can save their notes, return to them later, and export them as PDFs.
 
-The backend supports Gemini, Groq, and Cloudflare AI. Users can select a provider directly or choose **Auto** to try configured providers in sequence when generation fails or produces an invalid response structure.
+The backend supports Gemini, Grok, and Cloudflare AI. Users can select a provider directly or choose **Auto** to try configured providers in sequence when generation fails or produces an invalid response structure.
 
 ## Features
 
@@ -45,9 +45,9 @@ The backend supports Gemini, Groq, and Cloudflare AI. Users can select a provide
 
 ### Multiple AI Providers
 
-- Supports Google Gemini, Groq, and Cloudflare AI.
+- Supports Google Gemini, xAI Grok, and Cloudflare AI.
 - Select a provider manually or use **Auto** fallback mode.
-- In Auto mode, the backend tries Gemini, then Groq, then Cloudflare AI, moving to the next configured provider if generation fails or the response format is invalid.
+- In Auto mode, the backend tries Gemini, then Grok, then Cloudflare AI, moving to the next configured provider if generation fails or the response format is invalid.
 - The provider used for a successful generation is included in the result and saved with the note.
 
 ### Authentication and Saved History
@@ -136,7 +136,7 @@ The backend supports Gemini, Groq, and Cloudflare AI. Users can select a provide
 | Authentication | Firebase Google Sign-In, bcrypt, JWT cookies |
 | Payments | Stripe Checkout, signed webhook processing |
 | PDF Generation | PDFKit |
-| AI Providers | Google Gemini, Groq, Cloudflare AI |
+| AI Providers | Google Gemini, xAI Grok, Cloudflare AI |
 
 ## Architecture
 
@@ -153,7 +153,7 @@ flowchart TD
     E --> G[AI Provider Service]
 
     G --> H[Gemini]
-    G --> I[Groq]
+    G --> I[Grok]
     G --> J[Cloudflare AI]
 
     E --> K[(MongoDB)]
@@ -292,7 +292,9 @@ JWT_SECRET=replace-with-a-long-random-secret
 
 # Configure one or more AI providers
 GEMINI_API_KEY=your-gemini-api-key
-GROQ_API_KEY=your-groq-api-key
+GROK_API_KEY=your-xai-api-key
+# Optional: defaults to grok-4.7
+GROK_MODEL=grok-4.7
 CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
 CLOUDFLARE_AUTH_TOKEN=your-cloudflare-api-token
 
@@ -304,6 +306,8 @@ STRIPE_WEBHOOK_SECRET=your-stripe-webhook-signing-secret
 ### Environment Variable Notes
 
 - Configure only the AI providers you plan to use. Auto mode can try only providers that are configured and available.
+- `XAI_API_KEY` is also accepted as an alternative to `GROK_API_KEY`.
+- `GROK_MODEL` is optional; if omitted, the backend uses `grok-4.7`.
 - The Cloudflare token may also be supplied as `CLOUDFLARE_API_TOKEN`.
 - For local development, the backend allows `http://localhost:5173` and `http://localhost:3000`, plus the exact origin configured in `CLIENT_URL`.
 - Keep backend secrets on the server. Never put AI provider or Stripe secret keys in frontend environment variables or commit `.env` files.
@@ -315,9 +319,9 @@ The model selector supports the following providers and models:
 
 | Selection | Provider / Model | Required Backend Setting |
 |---|---|---|
-| Auto | Gemini → Groq → Cloudflare AI | Credentials for one or more providers |
+| Auto | Gemini → Grok → Cloudflare AI | Credentials for one or more providers |
 | Gemini | Gemini Flash (`gemini-flash-latest`) | `GEMINI_API_KEY` |
-| Groq | `openai/gpt-oss-120b` | `GROQ_API_KEY` |
+| Grok | `grok-4.7` (or `GROK_MODEL`) | `GROK_API_KEY` or `XAI_API_KEY` |
 | Cloudflare AI | `@cf/meta/llama-3.1-8b-instruct` | `CLOUDFLARE_ACCOUNT_ID` and a Cloudflare token |
 
 Selecting a specific provider sends the request only to that provider.
@@ -331,7 +335,7 @@ The Notes page displays the following provider-limit estimates:
 | Provider | Model Shown in the App | Displayed Estimate |
 |---|---|---:|
 | Gemini Flash | `gemini-flash-latest` | Up to 1,500 requests/day |
-| Groq | GPT-OSS 120B | 1,000+ requests/day |
+| Grok | Configured xAI model | Provider account limits vary |
 | Cloudflare AI | Llama 3.1 8B | 10,000 neurons/day |
 
 These are informational estimates shown by the application. They are not fetched from the user's provider account, may become outdated, and use units that are not directly comparable.
@@ -345,7 +349,7 @@ The generation layer expects structured JSON containing notes, importance-groupe
 ### Daily Free Allowance
 
 - Each user gets **50 generated chats per UTC day**.
-- The allowance is shared across Gemini, Groq, and Cloudflare AI.
+- The allowance is shared across Gemini, Grok, and Cloudflare AI.
 - The application tracks its own successful usage; it does not read provider account quotas.
 - The allowance resets according to the UTC date.
 
@@ -461,6 +465,7 @@ For cross-site production deployments, use HTTPS and ensure `CLIENT_URL` matches
 - Confirm that the selected provider's environment variables are configured on the backend.
 - Verify that the provider key is active and the account has available capacity.
 - Check backend logs for provider-specific errors.
+- For Grok, confirm `GROK_API_KEY` (or `XAI_API_KEY`) and the configured `GROK_MODEL` are valid; the backend response includes xAI's error message.
 - Try Auto mode to fall back to other configured providers.
 
 The frontend should not require AI provider secret keys.

@@ -61,7 +61,6 @@ const Notes = () => {
             >
               <option value="auto" className="bg-[#141516] text-white">Auto-Switch (Recommended)</option>
               <option value="gemini" className="bg-[#141516] text-white">Gemini</option>
-              <option value="grok" className="bg-[#141516] text-white">Grok (Deep search)</option>
               <option value="cloudflare" className="bg-[#141516] text-white">Cloudflare AI</option>
             </select>
           </div>

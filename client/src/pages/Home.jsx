@@ -13,7 +13,7 @@ const features = [
   {
     icon: "🤖",
     title: "Multiple AI Models",
-    description: "Choose Gemini, Groq, or Cloudflare AI for note generation.",
+    description: "Choose Gemini, Grok, or Cloudflare AI for note generation.",
   },
   {
     icon: "🔄",

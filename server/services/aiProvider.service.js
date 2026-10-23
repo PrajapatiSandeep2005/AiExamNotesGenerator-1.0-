@@ -38,10 +38,30 @@ const validateNotes = (content, providerName) => {
 };
 
 const readResponse = async (response, providerName) => {
-    const body = await response.json().catch(() => null);
-    const providerMessage = body?.error?.message
-        || body?.errors?.map(({ message }) => message).filter(Boolean).join("; ")
-        || body?.message;
+    const responseText = await response.text();
+    let body;
+    try {
+        body = responseText ? JSON.parse(responseText) : null;
+    } catch {
+        body = null;
+    }
+
+    const providerError = body?.error;
+    const errorMessages = Array.isArray(body?.errors)
+        ? body.errors.map((entry) => (
+            typeof entry === "string"
+                ? entry
+                : typeof entry?.message === "string" ? entry.message : undefined
+        )).filter((message) => typeof message === "string")
+        : [];
+    const primaryErrorMessage = typeof providerError === "string"
+        ? providerError
+        : typeof providerError?.message === "string" ? providerError.message : undefined;
+    const providerMessage = primaryErrorMessage
+        || errorMessages.join("; ")
+        || (typeof body?.message === "string" ? body.message : undefined)
+        || (typeof body?.detail === "string" ? body.detail : undefined)
+        || (!body && responseText.slice(0, 500));
     if (!response.ok || body?.success === false) {
         throw new Error(
             `${providerName} request failed${response.status ? ` with status ${response.status}` : ""}${providerMessage ? `: ${providerMessage}` : "."}`,
@@ -65,7 +85,7 @@ const callGrok = async (prompt) => {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model: process.env.GROK_MODEL || "grok-3-mini",
+            model: process.env.GROK_MODEL || "grok-4.7",
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             max_completion_tokens: 8192,
